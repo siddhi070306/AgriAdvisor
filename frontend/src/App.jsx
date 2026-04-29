@@ -201,7 +201,7 @@ const LoadingScreen = ({ isEnglish, isDarkMode, onFinished }) => {
 };
 
 function App() {
-  const { isEnglish, language, setLanguage } = useLanguage();
+  const { isEnglish } = useLanguage();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
 
   const [onboarding, setOnboarding] = useState('landing');
@@ -238,7 +238,7 @@ function App() {
               notificationSound.current.currentTime = 0;
               notificationSound.current.play().catch(() => { });
             }
-          } catch (e) { }
+          } catch { /* ignore blocked autoplay */ }
 
           setNotifications(prev => {
             // Uniqueness check
@@ -352,23 +352,12 @@ function App() {
                   paddingTop: screen === 'scanner' ? '0' : (isDesktop ? '100px' : '84px')
                 }}
               >
-                <MainHeader
-                  screen={screen}
-                  setScreen={setScreen}
-                  setTab={setActiveTab}
-                  isEnglish={isEnglish}
-                  setIsMenuOpen={setIsMenuOpen}
-                  isDesktop={isDesktop}
-                  isDarkMode={isDarkMode}
-                  previousCropScreen={previousCropScreen}
-                />
                 {screen !== 'scanner' && (
                   <MainHeader
                     screen={screen}
                     setScreen={setScreen}
                     setTab={setActiveTab}
                     isEnglish={isEnglish}
-                    setIsEnglish={setIsEnglish}
                     setIsMenuOpen={setIsMenuOpen}
                     isDesktop={isDesktop}
                     isDarkMode={isDarkMode}
@@ -386,6 +375,15 @@ function App() {
                     isEnglish={isEnglish}
                   />
                 )}
+
+
+                <NotificationTray
+                  notifications={notifications}
+                  removeNotification={(id) => setNotifications(current => current.filter(n => (n._id || n.timestamp) !== id))}
+                  isEnglish={isEnglish}
+                  setScreen={setScreen}
+                  setTab={setActiveTab}
+                />
 
                 <div className="content-card">
                   {screen === 'home' && (
