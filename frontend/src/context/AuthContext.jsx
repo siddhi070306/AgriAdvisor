@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(false); // Start with false to prevent hanging
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
     // Fetch user profile on mount if token exists
     useEffect(() => {
