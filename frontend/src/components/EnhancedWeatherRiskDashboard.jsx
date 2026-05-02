@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import useWeatherRisk from '../hooks/useWeatherRisk';
 import { enhancedCropData, getCropById, getCropsByCategory, getAllCropCategories, searchCrops } from '../enhancedCropData';
+import ForesightDashboard from './ForesightDashboard';
 
 const EnhancedWeatherRiskDashboard = ({ 
     userLocation = { lat: 18.5204, lon: 73.8567 }, 
@@ -1083,6 +1084,8 @@ const EnhancedWeatherRiskDashboard = ({
             {/* Forecast View */}
             {selectedView === 'forecast' && (
                 <div style={{ display: 'grid', gap: '24px' }}>
+                    <ForesightDashboard riskData={riskData} isDarkMode={isDarkMode} isEnglish={isEnglish} />
+                    
                     <div style={{
                         background: isDarkMode ? '#1f2937' : '#ffffff',
                         padding: '24px',

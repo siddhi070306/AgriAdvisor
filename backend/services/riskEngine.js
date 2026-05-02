@@ -2,6 +2,7 @@
  * Weather Risk Scoring Engine
  * Advanced agricultural risk analysis and prediction system
  */
+const temporalAdapter = require('./temporalAdapter');
 
 class RiskEngine {
     constructor() {
@@ -234,8 +235,73 @@ class RiskEngine {
         return {
             current: baseRisk,
             forecast,
-            summary: this.generateForecastSummary(forecast)
+            summary: this.generateForecastSummary(forecast),
+            infectionWindows: this.detectInfectionWindows(forecastData, cropType)
         };
+    }
+
+    /**
+     * Heuristic Pattern Matcher for Infection Windows
+     * Scans temporal sequence for continuous high-risk conditions
+     */
+    detectInfectionWindows(forecastData, cropType) {
+        const timeline = temporalAdapter.normalizeTimeline(forecastData);
+        if (timeline.length === 0) return [];
+
+        const cropFactor = this.cropRiskFactors[cropType] || { disease: 'fungal', pest: 'aphids' };
+        const diseaseThreshold = this.diseaseThresholds[cropFactor.disease];
+        const pestCondition = this.pestConditions[cropFactor.pest];
+
+        const windows = [];
+        let currentWindow = null;
+
+        // Slide over timeline
+        for (let i = 0; i < timeline.length; i++) {
+            const point = timeline[i];
+            
+            // Check heuristic conditions (e.g., Temp 18-30 AND Humidity > 85%)
+            // We use the crop's specific disease thresholds
+            const isDiseaseFavorable = 
+                point.temperature >= diseaseThreshold.tempMin &&
+                point.temperature <= diseaseThreshold.tempMax &&
+                point.humidity >= diseaseThreshold.humidityMin;
+
+            if (isDiseaseFavorable) {
+                if (!currentWindow) {
+                    currentWindow = {
+                        type: 'disease',
+                        target: cropFactor.disease,
+                        startTime: point.datetime,
+                        endTime: point.datetime,
+                        durationHours: point.durationHours,
+                        maxHumidity: point.humidity,
+                        avgTemp: point.temperature,
+                        points: 1
+                    };
+                } else {
+                    currentWindow.endTime = point.datetime;
+                    currentWindow.durationHours += point.durationHours;
+                    currentWindow.maxHumidity = Math.max(currentWindow.maxHumidity, point.humidity);
+                    currentWindow.avgTemp = ((currentWindow.avgTemp * currentWindow.points) + point.temperature) / (currentWindow.points + 1);
+                    currentWindow.points += 1;
+                }
+            } else {
+                if (currentWindow) {
+                    // Only register windows that last at least 24 hours (8 blocks of 3h)
+                    if (currentWindow.durationHours >= 24) {
+                        windows.push({...currentWindow});
+                    }
+                    currentWindow = null;
+                }
+            }
+        }
+        
+        // Close dangling window
+        if (currentWindow && currentWindow.durationHours >= 24) {
+            windows.push({...currentWindow});
+        }
+
+        return windows;
     }
 
     /**
