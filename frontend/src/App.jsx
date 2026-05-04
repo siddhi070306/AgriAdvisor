@@ -368,7 +368,7 @@ function App() {
                     setScreen={setScreen}
                     setTab={setActiveTab}
                     isEnglish={isEnglish}
-                    setIsEnglish={setIsEnglish}
+                    setIsEnglish={setLanguage}
                     setIsMenuOpen={setIsMenuOpen}
                     isDesktop={isDesktop}
                     isDarkMode={isDarkMode}
