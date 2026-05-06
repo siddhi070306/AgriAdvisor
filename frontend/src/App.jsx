@@ -203,7 +203,7 @@ const LoadingScreen = ({ isEnglish, isDarkMode, onFinished }) => {
 function App() {
   const { isEnglish, language, setLanguage } = useLanguage();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [onboarding, setOnboarding] = useState('landing');
   const [activeTab, setActiveTab] = useState('home');
   const [screen, setScreen] = useState('home');
@@ -285,6 +285,18 @@ function App() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  React.useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   const toggleTheme = () => setIsDarkMode(prev => !prev);
 
@@ -295,6 +307,18 @@ function App() {
         background: isDarkMode ? '#0f172a' : '#f8fafc',
       }}
     >
+      {!isOnline && (
+        <div style={{
+          background: "#f59e0b",
+          color: "white",
+          padding: "8px",
+          textAlign: "center",
+          fontSize: "14px",
+          fontWeight: "600"
+        }}>
+          ⚠️ Offline Mode Active
+        </div>
+      )}
         <AnimatePresence mode="wait">
           {onboarding === 'landing' && (
             <LandingScreen key="landing" onNext={() => setOnboarding('farm_info')} isDesktop={isDesktop} />
@@ -368,7 +392,7 @@ function App() {
                     setScreen={setScreen}
                     setTab={setActiveTab}
                     isEnglish={isEnglish}
-                    setIsEnglish={setIsEnglish}
+                    setIsEnglish={setLanguage}
                     setIsMenuOpen={setIsMenuOpen}
                     isDesktop={isDesktop}
                     isDarkMode={isDarkMode}
