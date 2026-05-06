@@ -48,12 +48,47 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
     };
 
     const fetchRecommendations = async () => {
+        // 📴 OFFLINE MODE: Load cached data
+        if (!navigator.onLine) {
+            console.log("📴 Offline mode: loading cached data");
+
+            const cached = localStorage.getItem("cachedCrops");
+
+            if (cached) {
+                setApiCrops(JSON.parse(cached));
+                return;
+            }
+        }
         console.log("🚀 fetchRecommendations running");
 
         setLoading(true);
         setError(null);
 
         try {
+            // 📴 STEP 1: Offline cache (you already added earlier)
+            if (!navigator.onLine) {
+                const cached = localStorage.getItem("cachedCrops");
+                if (cached) {
+                    setApiCrops(JSON.parse(cached));
+                    return;
+                }
+            }
+            const lastFetch = localStorage.getItem("cachedTime");
+
+            if (lastFetch) {
+                const diff = Date.now() - new Date(lastFetch).getTime();
+
+                if (diff < 10 * 60 * 1000) {
+                    console.log("⚡ Using cached data (fresh)");
+                    const cached = localStorage.getItem("cachedCrops");
+
+                    if (cached) {
+                        setApiCrops(JSON.parse(cached));
+                        return;
+                    }
+                }
+            }
+
             const payload = {
                 soilType: effectiveFarmInfo.soilType || '',
                 plantingSeason: effectiveFarmInfo.plantingSeason || '',
@@ -88,6 +123,9 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
 
             const normalized = (data.recommendations || []).map(normalizeApiCrop);
             setApiCrops(normalized.length > 0 ? normalized : null);
+            // 💾 Save to cache
+            localStorage.setItem("cachedCrops", JSON.stringify(normalized));
+            localStorage.setItem("cachedTime", new Date().toISOString());
 
         } catch (err) {
             console.error("❌ API ERROR:", err);
@@ -100,6 +138,19 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
         console.log("🔥 useEffect triggered");
         fetchRecommendations();
     }, [token]);
+    // 🌐 AUTO SYNC WHEN BACK ONLINE
+    useEffect(() => {
+        const handleOnline = () => {
+            console.log("🌐 Back online → syncing data");
+            fetchRecommendations();
+        };
+
+        window.addEventListener("online", handleOnline);
+
+        return () => {
+            window.removeEventListener("online", handleOnline);
+        };
+    }, []);
 
     // Use API results when available, fall back to static cropData
     const sourceData = apiCrops ?? cropData;
@@ -146,6 +197,7 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
         });
         return text;
     };
+    const lastUpdated = localStorage.getItem("cachedTime");
 
     return (
         <div style={{
@@ -217,6 +269,17 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
                         <TTSButton textToRead={getTTSText()} isDarkMode={isDarkMode} />
                     </div>
                 </div>
+
+                {/* 📴 OFFLINE LAST UPDATED INFO (ADD HERE 👇) */}
+                {!navigator.onLine && lastUpdated && (
+                    <p style={{
+                        fontSize: "12px",
+                        color: "#999",
+                        marginBottom: "10px"
+                    }}>
+                        Showing last updated data from {new Date(lastUpdated).toLocaleString()}
+                    </p>
+                )}
 
                 {/* Weather badge when live data is available */}
                 {weatherInfo && !usingFallback && (
