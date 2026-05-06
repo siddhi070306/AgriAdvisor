@@ -48,15 +48,13 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
     };
 
     const fetchRecommendations = async () => {
-        // 📴 OFFLINE MODE: Load cached data
+        // 📴 WEATHER OFFLINE CHECK (ADD HERE)
         if (!navigator.onLine) {
-            console.log("📴 Offline mode: loading cached data");
+            const cachedWeather = localStorage.getItem("cachedWeather");
 
-            const cached = localStorage.getItem("cachedCrops");
-
-            if (cached) {
-                setApiCrops(JSON.parse(cached));
-                return;
+            if (cachedWeather) {
+                console.log("📴 Using cached weather (offline)");
+                setWeatherInfo(JSON.parse(cachedWeather));
             }
         }
         console.log("🚀 fetchRecommendations running");
@@ -65,14 +63,6 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
         setError(null);
 
         try {
-            // 📴 STEP 1: Offline cache (you already added earlier)
-            if (!navigator.onLine) {
-                const cached = localStorage.getItem("cachedCrops");
-                if (cached) {
-                    setApiCrops(JSON.parse(cached));
-                    return;
-                }
-            }
             const lastFetch = localStorage.getItem("cachedTime");
 
             if (lastFetch) {
@@ -120,6 +110,11 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
             console.log("✅ API RESPONSE:", data);
 
             if (data.weather) setWeatherInfo(data.weather);
+            // 💾 Cache weather data
+            if (data.weather) {
+                localStorage.setItem("cachedWeather", JSON.stringify(data.weather));
+                localStorage.setItem("weatherTime", new Date().toISOString());
+            }
 
             const normalized = (data.recommendations || []).map(normalizeApiCrop);
             setApiCrops(normalized.length > 0 ? normalized : null);
@@ -127,10 +122,38 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
             localStorage.setItem("cachedCrops", JSON.stringify(normalized));
             localStorage.setItem("cachedTime", new Date().toISOString());
 
-        } catch (err) {
-            console.error("❌ API ERROR:", err);
+        } 
+        catch (err) {
+            console.warn("⚠️ Weather API failed:", err.message);
+
+            // 🧠 Try fallback weather
+            const cachedWeather = localStorage.getItem("cachedWeather");
+
+            if (cachedWeather) {
+                console.log("🔄 Using cached weather data");
+
+                setWeatherInfo(JSON.parse(cachedWeather));
+                setError("Using last available weather data");
+
+            } else {
+                setError("Unable to fetch weather data");
+                setWeatherInfo(null);
+            }
+
             setApiCrops(null);
-        } finally {
+            // 🔁 Retry once after 3 sec
+            const retryCount = Number(sessionStorage.getItem("weatherRetry") || 0);
+
+            if (retryCount < 1) {
+                sessionStorage.setItem("weatherRetry", retryCount + 1);
+
+                setTimeout(() => {
+                    console.log("🔁 Retrying weather fetch...");
+                    fetchRecommendations();
+                }, 3000);
+            }
+        }
+        finally {
             setLoading(false);
         }
     };
@@ -198,7 +221,7 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
         return text;
     };
     const lastUpdated = localStorage.getItem("cachedTime");
-
+    const weatherTime = localStorage.getItem("weatherTime");
     return (
         <div style={{
             width: '100%',
@@ -302,6 +325,26 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
                             {weatherInfo.source === 'live' ? (isEn ? ' · Live' : ' · लाइव्ह') : (isEn ? ' · Estimated' : ' · अंदाजे')}
                         </span>
                     </div>
+                )}
+                {/* ⚠️ Weather Error Message */}
+                {error && (
+                    <p style={{
+                        fontSize: "12px",
+                        color: "#f59e0b",
+                        marginBottom: "8px"
+                    }}>
+                        {error}
+                    </p>
+                )}
+
+                {/* 🕒 Last Updated */}
+                {weatherTime && (
+                    <p style={{
+                        fontSize: "11px",
+                        color: "#999"
+                    }}>
+                        Last updated: {new Date(weatherTime).toLocaleString()}
+                    </p>
                 )}
 
                 {/* Fallback notice */}

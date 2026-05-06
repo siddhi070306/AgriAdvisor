@@ -66,13 +66,59 @@ const MarketTicker = ({ isEnglish, isDarkMode }) => {
     };
 
     useEffect(() => {
+
+        const generateFallbackData = () => {
+            return cropData.map(c => {
+                const basePrice = parseInt(c.price.split('/')[0].replace(/[¥,]/g, ''));
+                const timeBasedChange = Math.sin(Date.now() / 10000) * 2;
+                const randomFactor = (Math.random() - 0.5) * 1;
+                const change = (timeBasedChange + randomFactor).toFixed(1);
+
+                return {
+                    commodity: isEnglish
+                        ? `${c.englishName} (${c.marathiName})`
+                        : `${c.marathiName} (${c.englishName})`,
+                    currentPrice: basePrice + Math.floor((Math.random() - 0.5) * 100),
+                    unit: c.price.split('/')[1] || 'quintal',
+                    percentageChange: change,
+                    trend: parseFloat(change) > 0 ? 'Rising' : 'Falling',
+                    market: 'Local Market',
+                    timestamp: new Date().toISOString()
+                };
+            });
+        };
+
+        const safeFetchMarketData = async () => {
+
+            // 📴 Offline fallback
+            if (!navigator.onLine) {
+                console.log("📴 Offline mode: using fallback market data");
+
+                setTrends(generateFallbackData());
+                return;
+            }
+
+            try {
+                await fetchMarketData();
+            } catch (err) {
+                console.warn("⚠️ Market API unavailable");
+
+                setTrends(generateFallbackData());
+            }
+        };
+
         // Initial fetch
-        fetchMarketData();
-        
-        // Set up real-time updates every 30 seconds
-        const interval = setInterval(fetchMarketData, 30000);
-        
+        safeFetchMarketData();
+
+        // Refresh every 30 sec ONLY when online
+        const interval = setInterval(() => {
+            if (navigator.onLine) {
+                safeFetchMarketData();
+            }
+        }, 30000);
+
         return () => clearInterval(interval);
+
     }, [isEnglish]);
 
     const displayItems = [...trends, ...trends];
