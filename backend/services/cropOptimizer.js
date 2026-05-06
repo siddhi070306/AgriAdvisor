@@ -1,3 +1,4 @@
+const { applyPersonalization } = require("./personalizationService");
 /**
  * Crop Optimization Service
  * Provides intelligent farming recommendations based on weather, risk analysis, and crop data
@@ -42,7 +43,7 @@ class CropOptimizer {
     /**
      * Generate comprehensive crop optimization recommendations
      */
-    generateOptimizationRecommendations(weatherData, riskAnalysis, cropInfo, farmInfo) {
+    async generateOptimizationRecommendations(weatherData, riskAnalysis, cropInfo, farmInfo) {
         const recommendations = {
             planting: this.getPlantingRecommendations(weatherData, riskAnalysis, cropInfo),
             irrigation: this.getIrrigationRecommendations(weatherData, riskAnalysis, cropInfo),
@@ -53,11 +54,47 @@ class CropOptimizer {
             general: this.getGeneralRecommendations(weatherData, riskAnalysis, cropInfo, farmInfo)
         };
 
+        // ✅ Extract userId safely
+        const userId = farmInfo?.userId || null;
+
+        const personalizedRecommendations = {};
+
+        // 🔥 Apply personalization safely to each category
+        for (const key of Object.keys(recommendations)) {
+            const recList = recommendations[key];
+
+            if (!Array.isArray(recList) || recList.length === 0) {
+                personalizedRecommendations[key] = recList;
+                continue;
+            }
+
+            try {
+                personalizedRecommendations[key] = await applyPersonalization(
+                    recList,
+                    userId
+                );
+            } catch (err) {
+                console.error(`❌ Personalization failed for ${key}:`, err);
+                personalizedRecommendations[key] = recList; // fallback
+            }
+        }
+
+        // ✅ Flatten all recommendations for global ranking
+        const allRecommendations = Object.values(personalizedRecommendations).flat();
+
+        // 🔥 GLOBAL PRIORITY (uses personalizedScore if available)
+        const priorityList = allRecommendations.sort((a, b) => {
+            const scoreA = a.personalizedScore || a.score || a.confidence || 0;
+            const scoreB = b.personalizedScore || b.score || b.confidence || 0;
+
+            return scoreB - scoreA;
+        });
+
         return {
-            recommendations,
-            priority: this.prioritizeRecommendations(recommendations),
-            timeline: this.generateActionTimeline(recommendations),
-            estimatedBenefits: this.calculateEstimatedBenefits(recommendations, cropInfo)
+            recommendations: personalizedRecommendations,
+            priority: priorityList,
+            timeline: this.generateActionTimeline(personalizedRecommendations),
+            estimatedBenefits: this.calculateEstimatedBenefits(personalizedRecommendations, cropInfo)
         };
     }
 

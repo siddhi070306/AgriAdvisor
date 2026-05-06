@@ -7,7 +7,7 @@ import TTSButton from '../components/TTSButton';
 import '../styles/CropRecommendationScreen.css';
 import FarmPattern from '../assets/bg2.png';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = 'http://localhost:5000';
 
 // Map API response fields to the shape the card UI expects
 function normalizeApiCrop(crop, index) {
@@ -47,20 +47,56 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
         ...farmInfo
     };
 
-    const fetchRecommendations = useCallback(async () => {
+    const fetchRecommendations = async () => {
+        // 📴 WEATHER OFFLINE CHECK (ADD HERE)
+        if (!navigator.onLine) {
+            const cachedWeather = localStorage.getItem("cachedWeather");
+
+            if (cachedWeather) {
+                console.log("📴 Using cached weather (offline)");
+                setWeatherInfo(JSON.parse(cachedWeather));
+            }
+        }
+        console.log("🚀 fetchRecommendations running");
+
         setLoading(true);
         setError(null);
+
         try {
+            const lastFetch = localStorage.getItem("cachedTime");
+
+            if (lastFetch) {
+                const diff = Date.now() - new Date(lastFetch).getTime();
+
+                if (diff < 10 * 60 * 1000) {
+                    console.log("⚡ Using cached data (fresh)");
+                    const cached = localStorage.getItem("cachedCrops");
+
+                    if (cached) {
+                        setApiCrops(JSON.parse(cached));
+                        return;
+                    }
+                }
+            }
+
             const payload = {
-                soilType: effectiveFarmInfo.soilType || effectiveFarmInfo.soil || '',
-                plantingSeason: effectiveFarmInfo.plantingSeason || effectiveFarmInfo.season || '',
+                soilType: effectiveFarmInfo.soilType || '',
+                plantingSeason: effectiveFarmInfo.plantingSeason || '',
                 location: effectiveFarmInfo.location || '',
                 lat: effectiveFarmInfo.lat,
                 lon: effectiveFarmInfo.lon
             };
 
+            console.log("📦 payload:", payload);
+
             const headers = { 'Content-Type': 'application/json' };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                console.log("🔐 Using token");
+            } else {
+                console.log("⚠️ No token, sending without auth");
+            }
 
             const res = await fetch(`${API_URL}/api/recommend-crops`, {
                 method: 'POST',
@@ -68,25 +104,76 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
                 body: JSON.stringify(payload)
             });
 
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
+            console.log("📡 STATUS:", res.status);
 
             const data = await res.json();
+            console.log("✅ API RESPONSE:", data);
+
             if (data.weather) setWeatherInfo(data.weather);
+            // 💾 Cache weather data
+            if (data.weather) {
+                localStorage.setItem("cachedWeather", JSON.stringify(data.weather));
+                localStorage.setItem("weatherTime", new Date().toISOString());
+            }
 
             const normalized = (data.recommendations || []).map(normalizeApiCrop);
             setApiCrops(normalized.length > 0 ? normalized : null);
-        } catch (err) {
-            console.warn('[CropRecommendation] API failed, using static fallback:', err.message);
-            setError(err.message);
+            // 💾 Save to cache
+            localStorage.setItem("cachedCrops", JSON.stringify(normalized));
+            localStorage.setItem("cachedTime", new Date().toISOString());
+
+        } 
+        catch (err) {
+            console.warn("⚠️ Weather API failed:", err.message);
+
+            // 🧠 Try fallback weather
+            const cachedWeather = localStorage.getItem("cachedWeather");
+
+            if (cachedWeather) {
+                console.log("🔄 Using cached weather data");
+
+                setWeatherInfo(JSON.parse(cachedWeather));
+                setError("Using last available weather data");
+
+            } else {
+                setError("Unable to fetch weather data");
+                setWeatherInfo(null);
+            }
+
             setApiCrops(null);
-        } finally {
+            // 🔁 Retry once after 3 sec
+            const retryCount = Number(sessionStorage.getItem("weatherRetry") || 0);
+
+            if (retryCount < 1) {
+                sessionStorage.setItem("weatherRetry", retryCount + 1);
+
+                setTimeout(() => {
+                    console.log("🔁 Retrying weather fetch...");
+                    fetchRecommendations();
+                }, 3000);
+            }
+        }
+        finally {
             setLoading(false);
         }
-    }, [effectiveFarmInfo.soilType, effectiveFarmInfo.plantingSeason, effectiveFarmInfo.location, token]);
-
+    };
     useEffect(() => {
+        console.log("🔥 useEffect triggered");
         fetchRecommendations();
-    }, [fetchRecommendations]);
+    }, [token]);
+    // 🌐 AUTO SYNC WHEN BACK ONLINE
+    useEffect(() => {
+        const handleOnline = () => {
+            console.log("🌐 Back online → syncing data");
+            fetchRecommendations();
+        };
+
+        window.addEventListener("online", handleOnline);
+
+        return () => {
+            window.removeEventListener("online", handleOnline);
+        };
+    }, []);
 
     // Use API results when available, fall back to static cropData
     const sourceData = apiCrops ?? cropData;
@@ -133,7 +220,8 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
         });
         return text;
     };
-
+    const lastUpdated = localStorage.getItem("cachedTime");
+    const weatherTime = localStorage.getItem("weatherTime");
     return (
         <div style={{
             width: '100%',
@@ -205,6 +293,17 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
                     </div>
                 </div>
 
+                {/* 📴 OFFLINE LAST UPDATED INFO (ADD HERE 👇) */}
+                {!navigator.onLine && lastUpdated && (
+                    <p style={{
+                        fontSize: "12px",
+                        color: "#999",
+                        marginBottom: "10px"
+                    }}>
+                        Showing last updated data from {new Date(lastUpdated).toLocaleString()}
+                    </p>
+                )}
+
                 {/* Weather badge when live data is available */}
                 {weatherInfo && !usingFallback && (
                     <div style={{
@@ -227,6 +326,26 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
                         </span>
                     </div>
                 )}
+                {/* ⚠️ Weather Error Message */}
+                {error && (
+                    <p style={{
+                        fontSize: "12px",
+                        color: "#f59e0b",
+                        marginBottom: "8px"
+                    }}>
+                        {error}
+                    </p>
+                )}
+
+                {/* 🕒 Last Updated */}
+                {weatherTime && (
+                    <p style={{
+                        fontSize: "11px",
+                        color: "#999"
+                    }}>
+                        Last updated: {new Date(weatherTime).toLocaleString()}
+                    </p>
+                )}
 
                 {/* Fallback notice */}
                 {usingFallback && error && (
@@ -244,9 +363,13 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
                     }}>
                         <AlertCircle size={14} />
                         <span>
-                            {isEn
-                                ? 'Showing general recommendations. Personalized results unavailable.'
-                                : 'सामान्य शिफारसी दाखवत आहे. वैयक्तिक निकाल उपलब्ध नाही.'}
+                            {displayCrops.some(c => c.personalized)
+                                ? (isEn
+                                    ? 'Personalized recommendations for you'
+                                    : 'तुमच्यासाठी वैयक्तिक शिफारसी')
+                                : (isEn
+                                    ? 'Showing general recommendations. Personalized results unavailable.'
+                                    : 'सामान्य शिफारसी दाखवत आहे. वैयक्तिक निकाल उपलब्ध नाही.')}
                         </span>
                     </div>
                 )}
@@ -359,6 +482,20 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
                                                         fontWeight: 700
                                                     }}>
                                                         {isEn ? crop.englishName : crop.marathiName}
+
+                                                        {/* ⭐ PERSONALIZED BADGE */}
+                                                        {crop.personalized && (
+                                                            <span style={{
+                                                                background: "#2E7D32",
+                                                                color: "white",
+                                                                padding: "4px 8px",
+                                                                borderRadius: "8px",
+                                                                fontSize: "11px",
+                                                                marginLeft: "8px"
+                                                            }}>
+                                                                ⭐ Recommended for YOU
+                                                            </span>
+                                                        )}
                                                     </h3>
                                                     <p style={{
                                                         fontSize: '0.8rem',
@@ -367,6 +504,16 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
                                                     }}>
                                                         {isEn ? crop.marathiName : crop.englishName}
                                                     </p>
+                                                    {/* 🧠 PERSONALIZATION EXPLANATION */}
+                                                    {crop.basedOn && (
+                                                        <p style={{
+                                                            fontSize: "12px",
+                                                            color: "#2E7D32",
+                                                            marginTop: "4px"
+                                                        }}>
+                                                            Based on your past success with {crop.basedOn}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                             {crop.price && crop.price !== '—' && (
@@ -383,6 +530,8 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
 
                                         {/* Row 2: Match Progress Bar */}
                                         <div style={{ marginBottom: '12px' }}>
+
+                                            {/* Top row (label + %) */}
                                             <div style={{
                                                 display: 'flex',
                                                 justifyContent: 'space-between',
@@ -393,15 +542,31 @@ const CropRecommendationScreen = ({ onSelectCrop, isEnglish, isDarkMode, farmInf
                                                 alignItems: 'flex-end'
                                             }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <span className="marathi" style={{ lineHeight: 1.2 }}>
+                                                    <span className="marathi">
                                                         {isEn ? 'Match' : 'जुळणी'}
                                                     </span>
-                                                    <span style={{ fontSize: '0.65rem', color: '#9ca3af', fontWeight: 400 }}>
+                                                    <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>
                                                         {isEn ? 'जुळणी' : 'Match'}
                                                     </span>
                                                 </div>
-                                                <span style={{ color: 'var(--primary)' }}>{crop.matchScore}%</span>
+
+                                                <span style={{ color: 'var(--primary)' }}>
+                                                    {crop.matchScore}%
+                                                </span>
                                             </div>
+
+                                            {/* 📊 PERSONALIZED SCORE (CORRECT PLACE) */}
+                                            {crop.personalizedScore && (
+                                                <p style={{
+                                                    fontSize: "11px",
+                                                    color: "#666",
+                                                    marginTop: "4px"
+                                                }}>
+                                                    Score: {crop.personalizedScore.toFixed(1)}
+                                                </p>
+                                            )}
+
+                                            {/* Progress bar */}
                                             <div style={{
                                                 height: '6px',
                                                 background: isDarkMode ? '#4a5568' : '#f1f3f4',

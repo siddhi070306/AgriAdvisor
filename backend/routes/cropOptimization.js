@@ -8,7 +8,7 @@ const { authenticateToken } = require('../middleware/auth');
  * Get comprehensive crop optimization recommendations
  * GET /api/crop-optimization/recommendations
  */
-router.get('/recommendations', async (req, res) => {
+router.get('/recommendations', authenticateToken, async (req, res) => {
     try {
         const { lat, lon, cropType, cropInfo, farmInfo } = req.query;
         
@@ -42,13 +42,17 @@ router.get('/recommendations', async (req, res) => {
         
         // Get comprehensive weather analysis
         const weatherAnalysis = await getWeatherAnalysis(latitude, longitude, crop);
-        
+        console.log("USER:", req.user);
         // Generate optimization recommendations
-        const optimizationData = cropOptimizer.generateOptimizationRecommendations(
+        const optimizationData = await cropOptimizer.generateOptimizationRecommendations(
             weatherAnalysis.current,
             weatherAnalysis.current.risk,
             parsedCropInfo,
-            parsedFarmInfo
+            {
+                ...parsedFarmInfo,
+                userId: req.user?.id || "demo-user"
+                
+            }
         );
         
         res.json({
@@ -181,7 +185,7 @@ router.get('/irrigation', async (req, res) => {
  * Get action timeline for the next week
  * GET /api/crop-optimization/timeline
  */
-router.get('/timeline', async (req, res) => {
+router.get('/timeline', authenticateToken, async (req, res) => {
     try {
         const { lat, lon, cropType, cropInfo, farmInfo } = req.query;
         
@@ -209,11 +213,14 @@ router.get('/timeline', async (req, res) => {
         }
 
         const weatherAnalysis = await getWeatherAnalysis(latitude, longitude, crop);
-        const optimizationData = cropOptimizer.generateOptimizationRecommendations(
+        const optimizationData = await cropOptimizer.generateOptimizationRecommendations(
             weatherAnalysis.current,
             weatherAnalysis.current.risk,
             parsedCropInfo,
-            parsedFarmInfo
+            {
+                ...parsedFarmInfo,
+                userId: req.user?.id || "demo-user"
+            }
         );
         
         res.json({
@@ -242,7 +249,7 @@ router.get('/timeline', async (req, res) => {
  * Get estimated benefits analysis
  * GET /api/crop-optimization/benefits
  */
-router.get('/benefits', async (req, res) => {
+router.get('/benefits', authenticateToken, async (req, res) => {
     try {
         const { lat, lon, cropType, cropInfo, farmInfo } = req.query;
         
@@ -270,11 +277,14 @@ router.get('/benefits', async (req, res) => {
         }
 
         const weatherAnalysis = await getWeatherAnalysis(latitude, longitude, crop);
-        const optimizationData = cropOptimizer.generateOptimizationRecommendations(
+        const optimizationData = await cropOptimizer.generateOptimizationRecommendations(
             weatherAnalysis.current,
             weatherAnalysis.current.risk,
             parsedCropInfo,
-            parsedFarmInfo
+            {
+                ...parsedFarmInfo,
+                userId: req.user?.id || "demo-user"
+            }
         );
         
         res.json({
