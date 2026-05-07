@@ -286,8 +286,8 @@ const HomeScreen = ({ setScreen, setTab, isDarkMode, isEnglish, setSelectedCrop 
 
                     <div className="insight-grid grid grid-cols-2 gap-4" style={{ margin: '0 0 20px' }}>
                         <div className="insight-card bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700" onClick={() => { setSelectedCrop(topCrop); setScreen('crop-detail'); }} style={{ cursor: 'pointer' }}>
-                                <div className="insight-card-text font-bold" style={{ fontSize: '1rem' }}>
-                                    {isEn ? topCrop.englishName : topCrop.marathiName}
+                            <div className="insight-card-text font-bold" style={{ fontSize: '1rem' }}>
+                                {isEn ? topCrop.englishName : topCrop.marathiName}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '8px' }}>
                                 {isEn ? topCrop.marathiName : topCrop.englishName}
@@ -318,12 +318,12 @@ const HomeScreen = ({ setScreen, setTab, isDarkMode, isEnglish, setSelectedCrop 
                         </div>
                     </div>
 
-                    <div className="bg-green-50 text-green-900 dark:bg-green-900/30 dark:text-green-300 shadow-sm border border-green-100 dark:border-green-950" style={{ margin: '0 0 24px', padding: '20px', borderRadius: '24px', display: 'flex', gap: '16px' }}>
+                    <div className="bg-green-50 text-green-900 dark:bg-gray-800 dark:text-green-100 shadow-sm border border-green-200 dark:border-gray-700" style={{ margin: '0 0 24px', padding: '20px', borderRadius: '24px', display: 'flex', gap: '16px' }}>
                         <div style={{ background: 'var(--primary-dark)', padding: '10px', borderRadius: '12px', alignSelf: 'flex-start', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Lightbulb size={24} color="white" />
                         </div>
                         <div>
-                            <div className="marathi font-bold" style={{ marginBottom: '4px', fontSize: '0.95rem' }}>
+                            <div className="marathi font-bold text-green-900 dark:text-green-100" style={{ marginBottom: '4px', fontSize: '0.95rem' }}>
                                 {isEn ? 'Increase the use of organic fertilizers to improve soil texture.' : 'सेंद्रिय खतांचा वापर वाढवा आणि जमिनीचा पोत सुधारा.'}
                             </div>
                         </div>
@@ -355,21 +355,6 @@ const HomeScreen = ({ setScreen, setTab, isDarkMode, isEnglish, setSelectedCrop 
                         </div>
                     </div>
 
-                    <button
-                        onClick={() => setScreen('scanner')}
-                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-2xl shadow-md flex items-center gap-3 transition-all w-full"
-                        style={{ margin: '0 0 24px' }}
-                    >
-                        <span className="text-2xl">🔍</span>
-                        <div className="text-left">
-                            <p className="font-bold">
-                                {isEnglish ? 'Crop Disease Scanner' : 'पीक रोग स्कॅनर'}
-                            </p>
-                            <p className="text-sm opacity-80">
-                                {isEnglish ? 'Detect disease from a leaf photo' : 'पानाचा फोटो घेऊन रोग तपासा'}
-                            </p>
-                        </div>
-                    </button>
 
                     <button className="cta-btn" onClick={() => { setScreen('recommendations'); setTab('crops'); }}>
                         <div className="marathi" style={{ fontSize: '1.2rem' }}>
