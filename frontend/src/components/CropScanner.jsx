@@ -18,16 +18,34 @@ import DiseaseResultCard from './DiseaseResultCard';
 import { useLanguage } from '../context/LanguageContext';
 import { analyzeCropDisease } from '../services/geminiVision';
 
+// ─── Dark Mode Detection Hook ─────────────────────────────────────────────────
+// Watches for the `.dark` class that App.jsx toggles on the root wrapper div.
+
+const useIsDarkMode = () => {
+  const [isDark, setIsDark] = useState(() => !!document.querySelector('.dark'));
+  useEffect(() => {
+    const update = () => setIsDark(!!document.querySelector('.dark'));
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['class'],
+    });
+    return () => observer.disconnect();
+  }, []);
+  return isDark;
+};
+
 // ─── Upload Card ──────────────────────────────────────────────────────────────
 
-const UploadCard = ({ imageURL, onReset, onFileSelect, fileInputRef, isMarathi }) => (
+const UploadCard = ({ imageURL, onReset, onFileSelect, fileInputRef, isMarathi, isDarkMode }) => (
   <div style={{
-    background: '#fff',
+    background: isDarkMode ? '#1f2937' : '#fff',
     borderRadius: '24px',
     padding: '24px',
     width: '100%',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-    border: '1px solid #dcfce7',
+    boxShadow: isDarkMode ? '0 4px 24px rgba(0,0,0,0.3)' : '0 4px 24px rgba(0,0,0,0.08)',
+    border: isDarkMode ? '1px solid #374151' : '1px solid #dcfce7',
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
@@ -39,11 +57,11 @@ const UploadCard = ({ imageURL, onReset, onFileSelect, fileInputRef, isMarathi }
         onClick={() => fileInputRef.current?.click()}
         style={{
           width: '100%',
-          border: '3px dashed #86efac',
+          border: isDarkMode ? '3px dashed #374151' : '3px dashed #86efac',
           borderRadius: '20px',
           padding: '40px 24px',
           cursor: 'pointer',
-          background: 'rgba(240,253,244,0.5)',
+          background: isDarkMode ? 'rgba(17,24,39,0.5)' : 'rgba(240,253,244,0.5)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -53,7 +71,7 @@ const UploadCard = ({ imageURL, onReset, onFileSelect, fileInputRef, isMarathi }
         <div style={{
           width: '72px',
           height: '72px',
-          background: '#dcfce7',
+          background: isDarkMode ? '#064e3b' : '#dcfce7',
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
@@ -62,10 +80,10 @@ const UploadCard = ({ imageURL, onReset, onFileSelect, fileInputRef, isMarathi }
         }}>
           <Camera color="#16a34a" size={36} />
         </div>
-        <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: 800, color: '#1f2937' }}>
+        <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: 800, color: isDarkMode ? '#f9fafb' : '#1f2937' }}>
           {isMarathi ? 'पीक फोटो निवडा' : 'Select a Crop Photo'}
         </h3>
-        <p style={{ margin: '0 0 24px 0', fontSize: '12px', color: '#6b7280' }}>
+        <p style={{ margin: '0 0 24px 0', fontSize: '12px', color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
           {isMarathi ? 'कॅमेरा किंवा गॅलरीतून निवडा' : 'Use camera or upload from gallery'}
         </p>
 
@@ -79,8 +97,11 @@ const UploadCard = ({ imageURL, onReset, onFileSelect, fileInputRef, isMarathi }
             <Camera size={16} /> {isMarathi ? 'कॅमेरा' : 'Camera'}
           </div>
           <div style={{
-            flex: 1, background: '#f9fafb', border: '1.5px solid #d1fae5',
-            color: '#374151', fontWeight: 700, padding: '12px', borderRadius: '14px',
+            flex: 1,
+            background: isDarkMode ? '#374151' : '#f9fafb',
+            border: isDarkMode ? '1.5px solid #4b5563' : '1.5px solid #d1fae5',
+            color: isDarkMode ? '#d1d5db' : '#374151',
+            fontWeight: 700, padding: '12px', borderRadius: '14px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: '6px', fontSize: '12px'
           }}>
@@ -124,7 +145,7 @@ const UploadCard = ({ imageURL, onReset, onFileSelect, fileInputRef, isMarathi }
 
 // ─── Tips Grid ────────────────────────────────────────────────────────────────
 
-const TipsGrid = ({ isMarathi }) => {
+const TipsGrid = ({ isMarathi, isDarkMode }) => {
   const tips = [
     { icon: Search, label: isMarathi ? 'स्पष्ट जवळचा फोटो घ्या' : 'Clear close-up photo' },
     { icon: Sparkles, label: isMarathi ? 'चांगला प्रकाश' : 'Good lighting' },
@@ -135,17 +156,20 @@ const TipsGrid = ({ isMarathi }) => {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
       {tips.map((tip, idx) => (
         <div key={idx} style={{
-          background: '#fff', border: '1.5px solid #d1fae5', borderRadius: '16px',
+          background: isDarkMode ? '#1f2937' : '#fff',
+          border: isDarkMode ? '1.5px solid #374151' : '1.5px solid #d1fae5',
+          borderRadius: '16px',
           padding: '14px', display: 'flex', alignItems: 'center', gap: '10px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.04)'
         }}>
           <div style={{
-            background: '#dcfce7', borderRadius: '10px', width: '34px', height: '34px',
+            background: isDarkMode ? '#064e3b' : '#dcfce7',
+            borderRadius: '10px', width: '34px', height: '34px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
           }}>
             <tip.icon color="#16a34a" size={16} />
           </div>
-          <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#374151', lineHeight: 1.3, textAlign: 'left' }}>
+          <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: 1.3, textAlign: 'left' }}>
             {tip.label}
           </p>
         </div>
@@ -158,6 +182,7 @@ const TipsGrid = ({ isMarathi }) => {
 
 const CropScanner = ({ setScreen }) => {
   const { language, isMarathi } = useLanguage();
+  const isDarkMode = useIsDarkMode();
 
   const [image, setImage]     = useState(null);
   const [imageURL, setImageURL] = useState(null);
@@ -248,7 +273,9 @@ const CropScanner = ({ setScreen }) => {
   return (
     <div style={{
       width: '100%', minHeight: '100vh',
-      background: 'linear-gradient(160deg, #f0fdf4 0%, #f9fafb 100%)',
+      background: isDarkMode
+        ? '#111827'
+        : 'linear-gradient(160deg, #f0fdf4 0%, #f9fafb 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       paddingTop: '24px', paddingBottom: '100px',
       paddingLeft: '16px', paddingRight: '16px',
@@ -262,19 +289,20 @@ const CropScanner = ({ setScreen }) => {
         alignItems: 'stretch', gap: '20px'
       }}>
 
-        {/* ─ Page title (lightweight, no full header card) ─ */}
+        {/* ─ Page title ─ */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '4px' }}>
           <div style={{
-            background: '#dcfce7', borderRadius: '12px', width: '40px', height: '40px',
+            background: isDarkMode ? '#064e3b' : '#dcfce7',
+            borderRadius: '12px', width: '40px', height: '40px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
           }}>
             <Leaf color="#16a34a" size={22} />
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#1f2937' }}>
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: isDarkMode ? '#f9fafb' : '#1f2937' }}>
               {isMarathi ? 'पीक रोग स्कॅनर' : 'Crop Disease Scanner'}
             </h2>
-            <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', fontWeight: 500 }}>
+            <p style={{ margin: 0, fontSize: '11px', color: isDarkMode ? '#9ca3af' : '#6b7280', fontWeight: 500 }}>
               {isMarathi ? 'Gemini 2.5 Flash AI द्वारे' : 'Powered by Gemini 2.5 Flash AI'}
             </p>
           </div>
@@ -284,7 +312,7 @@ const CropScanner = ({ setScreen }) => {
         <UploadCard
           imageURL={imageURL} onReset={handleReset}
           onFileSelect={handleImageChange} fileInputRef={fileInputRef}
-          isMarathi={isMarathi}
+          isMarathi={isMarathi} isDarkMode={isDarkMode}
         />
 
         {/* Scan Button */}
@@ -330,7 +358,7 @@ const CropScanner = ({ setScreen }) => {
         )}
 
         {/* Tips */}
-        {!result && !loading && <TipsGrid isMarathi={isMarathi} />}
+        {!result && !loading && <TipsGrid isMarathi={isMarathi} isDarkMode={isDarkMode} />}
 
         {/* Error */}
         <AnimatePresence>
@@ -338,7 +366,8 @@ const CropScanner = ({ setScreen }) => {
             <motion.div
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               style={{
-                background: '#fff', border: '2px solid #fecaca',
+                background: isDarkMode ? '#1f2937' : '#fff',
+                border: isDarkMode ? '2px solid #7f1d1d' : '2px solid #fecaca',
                 borderRadius: '20px', padding: '18px',
                 display: 'flex', alignItems: 'flex-start',
                 gap: '14px', boxShadow: '0 4px 20px rgba(239,68,68,0.08)',
@@ -351,10 +380,10 @@ const CropScanner = ({ setScreen }) => {
               }} />
               <ShieldAlert color="#ef4444" size={26} style={{ flexShrink: 0, marginTop: '2px' }} />
               <div>
-                <div style={{ fontWeight: 800, fontSize: '13px', color: '#991b1b', marginBottom: '4px' }}>
+                <div style={{ fontWeight: 800, fontSize: '13px', color: isDarkMode ? '#fca5a5' : '#991b1b', marginBottom: '4px' }}>
                   {isMarathi ? 'सेवा व्यत्यय' : 'Service Interruption'}
                 </div>
-                <div style={{ fontSize: '12px', color: '#b91c1c', lineHeight: 1.6 }}>{error}</div>
+                <div style={{ fontSize: '12px', color: isDarkMode ? '#f87171' : '#b91c1c', lineHeight: 1.6 }}>{error}</div>
               </div>
             </motion.div>
           )}
@@ -369,8 +398,11 @@ const CropScanner = ({ setScreen }) => {
             >
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: '6px', background: '#dcfce7', borderRadius: '12px',
-                padding: '8px 16px', fontSize: '11px', fontWeight: 700, color: '#15803d'
+                gap: '6px',
+                background: isDarkMode ? '#064e3b' : '#dcfce7',
+                borderRadius: '12px',
+                padding: '8px 16px', fontSize: '11px', fontWeight: 700,
+                color: isDarkMode ? '#4ade80' : '#15803d'
               }}>
                 <Zap size={13} />
                 {isMarathi ? 'Gemini AI द्वारे विश्लेषण केले' : 'Analysed by Gemini AI'}
@@ -380,13 +412,15 @@ const CropScanner = ({ setScreen }) => {
                 result={result} language={language}
                 onReadAloud={handleReadAloud}
                 onSave={() => alert(isMarathi ? '✅ निकाल जतन केला!' : '✅ Result saved!')}
+                isDarkMode={isDarkMode}
               />
 
               <button
                 onClick={handleReset}
                 style={{
                   width: '100%', padding: '16px', borderRadius: '18px',
-                  border: '2px solid #16a34a', background: 'transparent',
+                  border: '2px solid #16a34a',
+                  background: isDarkMode ? 'transparent' : 'transparent',
                   color: '#16a34a', fontWeight: 700, fontSize: '15px',
                   cursor: 'pointer', display: 'flex',
                   alignItems: 'center', justifyContent: 'center', gap: '8px'

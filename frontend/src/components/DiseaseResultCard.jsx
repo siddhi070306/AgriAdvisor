@@ -5,7 +5,9 @@ const SEVERITY = {
   High: {
     accent: '#dc2626',
     accentLight: '#fef2f2',
+    accentLightDark: 'rgba(220,38,38,0.12)',
     accentBorder: '#fecaca',
+    accentBorderDark: '#7f1d1d',
     badge: { bg: '#dc2626', color: '#fff' },
     bar: '#dc2626',
     label: 'High Risk',
@@ -14,7 +16,9 @@ const SEVERITY = {
   Medium: {
     accent: '#d97706',
     accentLight: '#fffbeb',
+    accentLightDark: 'rgba(217,119,6,0.12)',
     accentBorder: '#fde68a',
+    accentBorderDark: '#78350f',
     badge: { bg: '#d97706', color: '#fff' },
     bar: '#d97706',
     label: 'Medium Risk',
@@ -23,7 +27,9 @@ const SEVERITY = {
   Low: {
     accent: '#16a34a',
     accentLight: '#f0fdf4',
+    accentLightDark: 'rgba(22,163,74,0.12)',
     accentBorder: '#bbf7d0',
+    accentBorderDark: '#14532d',
     badge: { bg: '#16a34a', color: '#fff' },
     bar: '#16a34a',
     label: 'Low Risk',
@@ -32,7 +38,9 @@ const SEVERITY = {
   None: {
     accent: '#16a34a',
     accentLight: '#f0fdf4',
+    accentLightDark: 'rgba(22,163,74,0.12)',
     accentBorder: '#bbf7d0',
+    accentBorderDark: '#14532d',
     badge: { bg: '#16a34a', color: '#fff' },
     bar: '#16a34a',
     label: 'Healthy',
@@ -41,13 +49,13 @@ const SEVERITY = {
 };
 
 // ── Section block ────────────────────────────────────────────────────────────
-const Section = ({ icon, title, text, accent }) => (
+const Section = ({ icon, title, text, accent, isDarkMode }) => (
   <div style={{
-    background: '#fff',
+    background: isDarkMode ? '#111827' : '#fff',
     borderRadius: '16px',
     padding: '16px',
-    border: '1.5px solid #f3f4f6',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
+    border: isDarkMode ? '1.5px solid #374151' : '1.5px solid #f3f4f6',
+    boxShadow: isDarkMode ? 'none' : '0 1px 4px rgba(0,0,0,0.04)'
   }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
       <span style={{ fontSize: '16px' }}>{icon}</span>
@@ -55,12 +63,12 @@ const Section = ({ icon, title, text, accent }) => (
         {title}
       </span>
     </div>
-    <p style={{ margin: 0, fontSize: '13px', color: '#374151', lineHeight: 1.7 }}>{text}</p>
+    <p style={{ margin: 0, fontSize: '13px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: 1.7 }}>{text}</p>
   </div>
 );
 
 // ── Main component ───────────────────────────────────────────────────────────
-const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
+const DiseaseResultCard = ({ result, language, onReadAloud, onSave, isDarkMode }) => {
   if (!result) return null;
 
   const isMarathi = language === 'marathi';
@@ -75,11 +83,11 @@ const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
 
   return (
     <div style={{
-      background: '#fff',
+      background: isDarkMode ? '#1f2937' : '#fff',
       borderRadius: '24px',
       overflow: 'hidden',
-      boxShadow: '0 8px 40px rgba(0,0,0,0.10)',
-      border: '1.5px solid #f3f4f6',
+      boxShadow: isDarkMode ? '0 8px 40px rgba(0,0,0,0.4)' : '0 8px 40px rgba(0,0,0,0.10)',
+      border: isDarkMode ? '1.5px solid #374151' : '1.5px solid #f3f4f6',
       width: '100%',
       boxSizing: 'border-box'
     }}>
@@ -90,8 +98,8 @@ const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
       {/* ── Header ── */}
       <div style={{
         padding: '20px 20px 16px',
-        background: sev.accentLight,
-        borderBottom: `1.5px solid ${sev.accentBorder}`
+        background: isDarkMode ? sev.accentLightDark : sev.accentLight,
+        borderBottom: `1.5px solid ${isDarkMode ? sev.accentBorderDark : sev.accentBorder}`
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -99,14 +107,14 @@ const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
               <span style={{ fontSize: '20px' }}>{sev.icon}</span>
               <h2 style={{
                 margin: 0, fontSize: '20px', fontWeight: 900,
-                color: '#111827', lineHeight: 1.2,
+                color: isDarkMode ? '#f9fafb' : '#111827', lineHeight: 1.2,
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
               }}>
                 {diseaseName}
               </h2>
             </div>
             {diseaseAlt && (
-              <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', fontWeight: 500, paddingLeft: '28px' }}>
+              <p style={{ margin: 0, fontSize: '12px', color: isDarkMode ? '#9ca3af' : '#6b7280', fontWeight: 500, paddingLeft: '28px' }}>
                 {diseaseAlt}
               </p>
             )}
@@ -127,14 +135,14 @@ const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
         {/* Confidence bar */}
         <div style={{ marginTop: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: 600 }}>
+            <span style={{ fontSize: '11px', color: isDarkMode ? '#9ca3af' : '#6b7280', fontWeight: 600 }}>
               {isMarathi ? 'विश्वसनीयता' : 'Confidence'}
             </span>
             <span style={{ fontSize: '11px', fontWeight: 800, color: sev.accent }}>
               {result.confidence}%
             </span>
           </div>
-          <div style={{ height: '6px', background: '#e5e7eb', borderRadius: '999px', overflow: 'hidden' }}>
+          <div style={{ height: '6px', background: isDarkMode ? '#374151' : '#e5e7eb', borderRadius: '999px', overflow: 'hidden' }}>
             <div style={{
               height: '100%', borderRadius: '999px',
               background: `linear-gradient(90deg, ${sev.accent} 0%, ${sev.accent}99 100%)`,
@@ -154,6 +162,7 @@ const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
           title={isMarathi ? 'काय होत आहे?' : 'What is happening?'}
           text={description}
           accent={sev.accent}
+          isDarkMode={isDarkMode}
         />
 
         {result.severity !== 'None' && (
@@ -164,6 +173,7 @@ const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
               title={isMarathi ? 'सेंद्रिय उपाय' : 'Organic Treatment'}
               text={organic}
               accent="#16a34a"
+              isDarkMode={isDarkMode}
             />
 
             {/* Chemical */}
@@ -172,13 +182,16 @@ const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
               title={isMarathi ? 'रासायनिक उपाय' : 'Chemical Treatment'}
               text={chemical}
               accent="#7c3aed"
+              isDarkMode={isDarkMode}
             />
 
             {/* Immediate action */}
             {action && (
               <div style={{
-                background: 'linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%)',
-                border: '1.5px solid #fca5a5',
+                background: isDarkMode
+                  ? 'rgba(220,38,38,0.1)'
+                  : 'linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%)',
+                border: isDarkMode ? '1.5px solid #7f1d1d' : '1.5px solid #fca5a5',
                 borderRadius: '16px',
                 padding: '16px',
                 display: 'flex',
@@ -196,7 +209,7 @@ const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
                   <p style={{ margin: '0 0 4px 0', fontSize: '11px', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {isMarathi ? 'आत्ता करा' : 'Do This Now'}
                   </p>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#7f1d1d', lineHeight: 1.6 }}>
+                  <p style={{ margin: 0, fontSize: '13px', color: isDarkMode ? '#fca5a5' : '#7f1d1d', lineHeight: 1.6 }}>
                     {action}
                   </p>
                 </div>
@@ -210,10 +223,13 @@ const DiseaseResultCard = ({ result, language, onReadAloud, onSave }) => {
           <button
             onClick={onReadAloud}
             style={{
-              flex: 1, border: '1.5px solid #e5e7eb', background: '#f9fafb',
+              flex: 1,
+              border: isDarkMode ? '1.5px solid #4b5563' : '1.5px solid #e5e7eb',
+              background: isDarkMode ? '#374151' : '#f9fafb',
               borderRadius: '14px', padding: '12px 8px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: '6px', fontSize: '12px', fontWeight: 700, color: '#374151',
+              gap: '6px', fontSize: '12px', fontWeight: 700,
+              color: isDarkMode ? '#d1d5db' : '#374151',
               cursor: 'pointer', transition: 'all 0.2s'
             }}
           >
