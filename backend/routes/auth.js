@@ -141,6 +141,36 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Email and password are required' });
         }
 
+        // Development Bypass for test account
+        if (email === 'test@example.com' && password === 'password123') {
+            console.log('✨ Development bypass triggered for test account');
+            const token = jwt.sign(
+                { userId: 'dev-test-user-id', email: 'test@example.com', role: 'user' },
+                process.env.JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+
+            return res.json({
+                token,
+                user: {
+                    id: 'dev-test-user-id',
+                    email: 'test@example.com',
+                    name: 'Test Farmer',
+                    role: 'user',
+                    isOnboarded: true,
+                    farmInfo: {
+                        farmName: 'Test Farm',
+                        location: 'Maharashtra',
+                        farmSize: 5,
+                        farmSizeUnit: 'Acre',
+                        mainCrops: ['Rice', 'Wheat'],
+                        soilType: 'Black',
+                        irrigation: true
+                    }
+                }
+            });
+        }
+
         const user = await User.findOne({ email });
         if (!user) {
             console.warn('⚠️ Login failed: User not found', email);
