@@ -45,12 +45,18 @@ const useWeatherRisk = (userLocation, cropType = 'general') => {
                 // Calculate real risk scores based on actual weather data
                 const riskAnalysis = calculateRiskScores(weatherData, cropType);
                 
-                // Process forecast data
-                const processedForecast = forecastData.list.slice(0, 5).map(item => ({
+                // Process forecast data - Get one reading per day (e.g., around noon)
+                const dailyForecasts = forecastData.list.filter(item => item.dt_txt.includes('12:00:00'));
+                
+                // If the current time is past noon, today's 12:00:00 might not be in the list,
+                // or if we just want 5 days we can fallback to taking every 8th item (8 * 3 hours = 24 hours)
+                let selectedForecasts = dailyForecasts.length >= 5 ? dailyForecasts.slice(0, 5) : forecastData.list.filter((_, index) => index % 8 === 0).slice(0, 5);
+
+                const processedForecast = selectedForecasts.map(item => ({
                     date: item.dt_txt,
-                    temperature: item.main.temp,
-                    humidity: item.main.humidity,
-                    windSpeed: item.wind.speed * 3.6, // Convert m/s to km/h
+                    temperature: Math.round(item.main.temp),
+                    humidity: Math.round(item.main.humidity),
+                    windSpeed: Math.round(item.wind.speed * 3.6), // Convert m/s to km/h
                     rainfall: item.rain?.['3h'] || 0,
                     description: item.weather[0].description,
                     risk: calculateRiskScores(item, cropType).overall

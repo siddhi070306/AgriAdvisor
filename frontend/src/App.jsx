@@ -352,23 +352,12 @@ function App() {
                   paddingTop: screen === 'scanner' ? '0' : (isDesktop ? '100px' : '84px')
                 }}
               >
-                <MainHeader
-                  screen={screen}
-                  setScreen={setScreen}
-                  setTab={setActiveTab}
-                  isEnglish={isEnglish}
-                  setIsMenuOpen={setIsMenuOpen}
-                  isDesktop={isDesktop}
-                  isDarkMode={isDarkMode}
-                  previousCropScreen={previousCropScreen}
-                />
                 {screen !== 'scanner' && (
                   <MainHeader
                     screen={screen}
                     setScreen={setScreen}
                     setTab={setActiveTab}
                     isEnglish={isEnglish}
-                    setIsEnglish={setIsEnglish}
                     setIsMenuOpen={setIsMenuOpen}
                     isDesktop={isDesktop}
                     isDarkMode={isDarkMode}
